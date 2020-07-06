@@ -1,0 +1,160 @@
+---
+title: "Human Activity Recognition Prediction assignment"
+author: "R Mofidi"
+date: "30/06/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+Human Activity Recognition - HAR - has emerged as a key research area in the last decade. In particular for the development of context-aware systems. There are many potential applications for HAR, like:  life log systems for monitoring energy expenditure and for supporting weight-loss programs, and digital assistants for weight lifting exercises.
+
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+
+The goal of your project is to predict the manner in which they did the exercise. This is the variable *classe* in the training set.  This report describe how the model was build trained and cross validated, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
+
+### Methods
+The first step involves opening the appropriate Packages and libraries
+```{r}
+library (lattice)
+library(ggplot2)
+library(caret)
+library(gbm)
+library(rattle)
+library(randomForest)
+library(e1071)
+```
+
+## downloading the datasets
+
+The next step involves downloading the training and testing datasets: 
+
+```{r}
+if(!file.exists("~/data")){dir.create("~/data")}
+fileUrltr <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+download.file(fileUrltr,destfile="~/data/pml-training")
+fileUrltest <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+download.file(fileUrltest,destfile="~/data/pml-testing")
+trainingAS<- read.csv("~/data/pml-training", sep=",")
+testingAS<- read.csv("~/data/pml-testing", sep=",")
+head(trainingAS)
+head(testingAS)
+```
+
+## Examining and visualising the data
+
+The testing and training dataset include 160 different variables with many variables containing NA entries or 0 entries. There are 5 different  outcome variables which are listed under the variabe classe (variable-160) A
+
+Therefore prior to designing the predictive models, the datasets need to be cleaned. in the first instance this involves variables which contain mostly NA entries or have near zoer variance: 
+
+
+
+```{r}
+zeroVar<-nearZeroVar(trainingAS)
+trainingAS<- trainingAS[,-zeroVar]
+testingAS<- testingAS[,-zeroVar]
+
+dim(trainingAS); dim(testingAS) 
+```
+
+```{r}
+MNA<- sapply(trainingAS, function(x) mean(is.na(x)))>0.90
+trainingAS<- trainingAS[,MNA==FALSE]
+testingAS<- testingAS[,MNA==FALSE]
+
+dim(trainingAS); dim(testingAS) 
+```
+
+Variables 1 to 6 are for case udentification and are unlikely to contribute to the predictive ability of the machine learning model. They includes:
+
+1- number
+2-user_name
+3-raw_timestamp_part_1	
+4-raw_timestamp_part_2	
+5- cvtd_timestamp
+6- new_window
+
+They are therefore exluded from the training and testing datasets:
+
+```{r}
+trainingAS<- trainingAS[,-c(1:6)]
+testingAS<- testingAS[,-c(1:6)]
+dim(trainingAS); dim(testingAS)
+```
+### Changing the classe variable from character to factor variable 
+```{r}
+trainingAS1<- trainingAS
+trainingAS1$classe<- as.factor(trainingAS1$classe)
+trainingAS1$classe<- as.integer(trainingAS1$classe)
+```
+
+### Assess and Visualise the relationships
+
+In order to examine the relationships between the variable classe and the remaining variables mulitvariate regression analysis is performed:
+
+```{r}
+summary(lm(formula = classe ~ ., data = trainingAS1))
+```
+
+Multivariate regression analysis failed to reveal a significant correlation between classe and following variables:
+1- roll_arm      
+2-accel_dumbbell_y 
+3- gyros_forearm_y  
+
+The relationship between each of these 3 variables and classe variable was examined using univariate regression analysis to see if there is any correlation between these 3 variables and the variable class 
+
+```{r}
+summary(lm(trainingAS1$classe~trainingAS1$roll_arm))
+summary(lm(trainingAS1$classe~trainingAS1$accel_dumbbell_y))
+summary(lm(trainingAS1$classe~trainingAS1$gyros_forearm_y))
+```
+
+It turns out that these 3 variables are excellent classifiers of the classe variable on their own. Therefore there are kept for training of the eventual model.  
+
+```{r, echo=FALSE}
+par(mfrow=c(2,2))
+plot(trainingAS1$classe~trainingAS1$roll_arm)
+plot(trainingAS1$classe~trainingAS1$accel_dumbbell_y)
+plot(trainingAS1$classe~trainingAS1$gyros_forearm_y)
+```
+
+### Visualizing the relationship between the imput variables
+
+The following plot is a visual representation of the relationships between the covariates. The darker the colour the stronger the relationships. Blue colour denotes a positive relationship whilst red/brown colour denotes negative relationships. 
+
+```{r, echo=FALSE}
+library(ggcorrplot)
+ cM<- cor(trainingAS1[-53,]) # Visualize the correlation matrix
+corrplot(cM, order = "FPC", method = "color",tl.cex=0.6, tl.col= 'black')
+```
+
+### The optimum Machine learning Model
+
+In order to develop the optimum predictor of
+
+```{r}
+set.seed(333)
+library(rpart)
+library(rpart.plot)
+trainingAS$classe<- as.factor(trainingAS$classe)
+modfitDTree<- rpart(classe~., data=trainingAS, method="class")
+fancyRpartPlot(modfitDTree)
+```
+
+```{r}
+predTree<- predict(modfitDTree, newdata = testingAS, type="class")
+predTree
+```
+
+
+
+References:
+1- W Ugulino, E Velloso, H Fuks. Human Activity Recognition dataset.  http://groupware.les.inf.puc-rio.br/har
+
+2-Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6.
+
