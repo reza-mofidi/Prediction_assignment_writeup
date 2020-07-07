@@ -29,7 +29,6 @@ The first step of the data analysis task involves loading and opening the approp
 library (lattice)
 library(ggplot2)
 library(caret)
-library(gbm)
 library(rattle)
 library(randomForest)
 library(e1071)
