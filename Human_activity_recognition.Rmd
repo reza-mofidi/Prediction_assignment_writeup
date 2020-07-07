@@ -2,7 +2,9 @@
 title: "Human Activity Recognition Prediction assignment"
 author: "R Mofidi"
 date: "30/06/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -10,21 +12,20 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Introduction
-Human Activity Recognition (HAR) - has emerged as a key research area in wearable device technology in the last decade. In particular for the development of context-aware systems. There are many potential applications for HAR, These include life log systems for monitoring energy expenditure and supporting weight-loss programs, and digital assistants for weight lifting exercises. These promote healthy living and weight loss programs.
+In the last decade Human Activity Recognition (HAR) - has emerged as a key research area in wearable device technology. In particular for the development of context-aware systems. There are many potential applications for HAR, These include life log systems for monitoring energy expenditure and supporting weight-loss programs, and digital assistants for weight lifting amongst others. They promote healthy living and weight loss programs.
 
 
 Using devices such as Nike FuelB (TM), Apple (TM) iWatch and Fitbit(TM), it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are technology enthusiasts. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. 
 
-In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. Detailed information about how the data is collected is available from the following website: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+In this project, our aim was to use data from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. Detailed information about how the data is collected is available from the following website: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
 
-
-The goal of this project is to predict the manner in which they did the exercise. This is recorded in the variable *classe* in the training set.  This report describe how the model was build trained and cross validated, 
+The goal of this project was to predict the manner in which they did the exercise. This is recorded in the variable *classe* in the training set.  This report describe how the model was build trained and cross validated, 
 
 The prediction model is used to predict what activity was carried out 20 different test cases.
 
 ## Methods
 ### Loading and Opening the training and out of sample testing datasets
-The first step of the data analysis task involves loading and opening the appropriate packages and libraries used to develop the classification models. The powerful and versatile "caret" machine learning package will be employed for this assignment, The "Rattle" package will be used to illustrate the classification tree and the "gbm" and "random Forest" packages will be used to develop the random forest  and adaptive boosting models. 
+The first step of the data analysis task involves loading and opening the appropriate packages and libraries used to develop the classification models. The powerful and versatile "caret" machine learning package was employed for this assignment, The "Rattle" package was used to illustrate the classification tree " and "randomForest" package was used to develop the random forest classifier. 
 ```{r}
 library (lattice)
 library(ggplot2)
@@ -36,7 +37,7 @@ library(e1071)
 
 ### Downloading the data sets
 
-The next step involves downloading the training and testing data sets: 
+The next step involved downloading the training and testing data sets: 
 
 ```{r}
 if(!file.exists("~/data")){dir.create("~/data")}
@@ -50,9 +51,9 @@ testingAS<- read.csv("~/data/pml-testing", sep=",")
 
 ### Examining and visualizing the data
 
-The testing and training data sets include 160 different variables with many variables containing NA entries or 0 entries. There are 5 different  outcome variables which are listed under the variable classe (variable-160). The variable "classe" is a factor variable which is made up of letters A, B, C, D and E.  
+The testing and training data sets include 160 different variables with many variables containing NA entries or 0 entries. There are 5 different  outcome variables which are listed under the variable classe (variable-160). The variable "classe" was a character variable which is made up of letters A, B, C, D and E.  
 
-Prior to attempting to design the predictive models, the data sets need to be cleaned. in the first instance this involves variables which contain mostly NA entries or have near zero variance: 
+Prior to attempting to design the predictive models, the data sets needed to be cleaned. in the first instance this involved removing variables which contain mostly NA entries or have near zero variance: 
 
 #### Removing variables with Near zero variance (non-classifiers)
 
@@ -63,6 +64,7 @@ testingAS<- testingAS[,-zeroVar]
 
 dim(trainingAS); dim(testingAS) 
 ```
+
 #### Remove All NA variables
 
 ```{r}
@@ -75,7 +77,7 @@ dim(trainingAS); dim(testingAS)
 
 #### Removing variables which do not contribute to data analysis:
 
-Variables 1 to 6 are for case identification and are unlikely to contribute to the predictive ability of the machine learning model. They includes:
+Variables 1 to 6 are for case identification and are unlikely to contribute to the predictive ability of the machine learning models. They include:
 
 1- number
 2-user_name
@@ -84,14 +86,16 @@ Variables 1 to 6 are for case identification and are unlikely to contribute to t
 5- cvtd_timestamp
 6- new_window
 
-They are therefore excluded from the training and testing datasets:
+They were therefore excluded from the training and testing datasets:
 
 ```{r}
 trainingAS<- trainingAS[,-c(1:6)]
 testingAS<- testingAS[,-c(1:6)]
 dim(trainingAS); dim(testingAS)
 ```
+
 #### Changing the classe variable from character to integer 
+
 ```{r}
 trainingAS1<- trainingAS
 trainingAS1$classe<- as.factor(trainingAS1$classe)
@@ -100,7 +104,7 @@ trainingAS1$classe<- as.integer(trainingAS1$classe)
 
 ### Assess and Visualize the relationships
 
-In order to examine the relationships between the variable classe and the remaining variables multivariate regression analysis is performed so that variables which bear no correlation with the classe variable are identified and removed if necessary:
+In order to examine the relationships between the variable "classe" and the remaining 53 variables multivariate regression analysis was performed so that variables which bear no correlation with the "classe" variable are identified and removed if necessary:
 
 ```{r}
 summary(lm(formula = classe ~ ., data = trainingAS1))
@@ -111,7 +115,7 @@ Multivariate regression analysis failed to reveal a significant correlation betw
 2-accel_dumbbell_y 
 3- gyros_forearm_y  
 
-The relationship between each of these 3 variables and classe variable was examined using univariate regression analysis to see if there is any correlation between these 3 variables and the variable class 
+The relationship between each of these 3 variables and classe variable was examined using univariate regression analysis to see if there is any correlation between these 3 variables and the variable "classe"
 
 ```{r}
 summary(lm(trainingAS1$classe~trainingAS1$roll_arm))
@@ -140,13 +144,13 @@ corrplot(cM, order = "FPC", method = "color",tl.cex=0.6, tl.col= 'black')
 
 ### The optimum Machine learning Model
 
-In order to develop the optimum classification model for performing the predictions associated with this task we are going to use the following models: 
+In order to develop the optimum classification model for performing the predictions associated with this task we  used the following models: 
 
 1- A random forest classifier 
 
 2- A Classification and regression tree
 
-Each model is trained using a proportion (70%) of the training data and validated using a cross Validation dataset (30%) of the training dataset. The final model is then tested on testingAS to assess the generalisability of  each classifier. This may be seen as a superfluous step but it is the only means of cross validation.The training dataset is called "trainingAS-t" The cross validation dataset is called "crossVal"
+If one of these models proved adequate no further analysis would be performed if not, other machine learning classifiers would be tried. Each model was trained using a proportion (70%) of the training data and validated using a cross Validation dataset which ws 30% of the training dataset. The final model was then tested on testingAS to assess the generalisability of each classifier. This may be seen as a superfluous step but it is the only means of cross validation.The training dataset is called "trainingAS-t". The cross validation dataset is called "crossVal"
 
 ```{r}
 trainingAS$classe<- as.factor(trainingAS$classe)
@@ -155,9 +159,9 @@ trainingAS_t<- trainingAS[inTrain,]
 crossVal<- trainingAS[-inTrain,]
 ```
 
-### Random Forest Classifier
+## Random Forest Classifier
 
-First model which we are going to develop is a random forest classifier. The random forest classifier performs repeated internal sampling and cross validation, however in order to maintain a level playing field between the classifiers it is trained and cross validated using the data partitions used: 
+The first model which we develop was a random forest classifier. The random forest classifier performs repeated internal sampling and cross validation, however in order to maintain a level playing field between the classifiers it was trained and cross validated using the data partitions used: 
 
 ```{r, random forest}
 set.seed(301)
@@ -168,13 +172,12 @@ modFitRF
 plot(modFitRF)
 ```
 
-It is possible to examine the relative importance of each variable in constructing the eventual random forest classifier. 
+It was possible to examine the relative importance of each variable in constructing the eventual random forest classifier. The following is a graphical representation of this:
 
-The following is a graphical representation of this:
-
-```{r}
+```{r,, echo=FALSE}
  plot(varImp(object=modFitRF),main="RF - Variable Importance")
 ```
+
 ### Assessing the accuracy of the random forest classifier using the cross validation dataset
 
 ```{r}
@@ -198,9 +201,10 @@ predRandomForest<- predict(modFitRF, newdata = testingAS, type="raw")
 predRandomForest
 ```
 
-### Classification Tree (Decision Tree) classifier
+## Classification Tree (Decision Tree) classifier
 
-For comparison purposes a classification tree was also created and trained using the same partitioning of the dataset to perform the exact same prediction. The following graph illustrates the structure of the decision tree classifier:  
+For comparison purposes a classification tree was also created and trained using the same partitioning of the dataset to perform the exact same prediction. The following graph illustrates the structure of the decision tree classifier:
+
 ```{r}
 set.seed(333)
 library(rpart)
@@ -211,7 +215,7 @@ fancyRpartPlot(modfitDTree)
 ```
 
 #### Cross Validation of the Decision Tree Classifier
-The accuracy of prediction using the tree classifier was assessed using the cross validation dataset:
+The accuracy of prediction using the tree classifier was assessed using the cross validation dataset. A confusion matrix was created for this purpose:
 
 ```{r}
 predTreeCV<- predict(modfitDTree, newdata = crossVal, type="class")
@@ -227,7 +231,7 @@ plot(mtr$table, col = mtr$byClass,
                   round(mtr$overall['Accuracy'], 4)))
 ```
 
-Finally a similar prediction i.e. the prediction of the "classe" variable was performed using the decision tree classifier:  
+Finally a similar prediction i.e. the prediction of the "classe" variable in the testingAS data set was performed using the decision tree classifier:  
 ```{r}
 predTree<- predict(modfitDTree, newdata = testingAS, type="class")
 predTree
@@ -247,11 +251,12 @@ plot(mtr2$table, col = mtr2$byClass,
 
 ## Conclusions
 
-As one would expect the random forest classifier was significantly better than the classification tree at correctly classifying the "classe" variable. This is not surprising as ensemble classifiers such as random forests and adaptive boosting algorithms are some of the most accurate classifiers in use today, both for classification and regression problems. They achieve this level of accuracy by using the collective power of imperfect "weak" classifiers (3). 
+As one would expect the random forest classifier was significantly better than the classification tree at correctly classifying the "classe" variable. This is not surprising as ensemble classifiers such as random forests and adaptive boosting algorithms are some of the most accurate classifiers in use today, both for classification and regression problems. They achieve this level of accuracy by using the collective power of imperfect "weak" classifiers (3).It is acknowledged that decision trees are not as powerful as random forest classifiers however the comparison between the two is still a useful exercise.  
 
-Random forests work through bagging which was described earlier whilst adaptive boosting algorithms improve the accuracy of classification through iterative improvements in the classification process. The reason why I selected random forest algorithm rather than an adaboost (adaptive boosting classifier is that the latter are prone to noise and sensitive outlying variables and therefore need to be used with caution. In this task the random forest classifier was 100% correct at classifying the 20 test samples which were part of the quiz. 
+Random forests belong to a group of machine learning algorithms called ensemble classifiers. They work through cooperation of many 'weak classifiers' to improve the predictive ability of the final classifier. Random forests work through a process called bagging where each member of ensemble simultaneously provides a contribution towards the final predictive model, whilst the other major class of ensemble classifiers or adaptive boosting algorithms improve the accuracy of classification through iterative improvements in the classification process. The reason why I selected random forest algorithm rather than an adaboost (adaptive boosting classifier) is that the latter are prone to noise and sensitive to outlying variables and therefore need to be used with caution. In this task the random forest classifier was 100% correct at classifying the 20 test samples which were part of the quiz. 
 
 ### References:
+
 1- W Ugulino, E Velloso, H Fuks. Human Activity Recognition dataset.  http://groupware.les.inf.puc-rio.br/har
 
 2-Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6.
